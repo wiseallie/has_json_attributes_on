@@ -46,26 +46,26 @@ end
 
 User #=> User(id: integer, email: string, profile: jsonb, contact_details: json, created_at: datetime, updated_at: datetime)
 u = User.new
-=> #<User:0x007fa3619f0950
+=> #<User:0x007fa28542a318
  id: nil,
  email: nil,
- profile: #<User::ProfileDynamicType:0x007fa36197c168 @age=23, @birthday=Thu, 07 Jan 1993, @companies=[], @extra={}, @firstname=nil, @kids_names=#<Set: {}>, @lastname=nil, @married=false, @salary=nil>,
- contact_details: #<User::ContactDetailsDynamicType:0x007fa361989ca0 @facebook=nil, @google=nil, @twitter=nil>,
+ profile: #<User::ProfileDynamicType:0x007fa285429dc8 @age=23, @birthday=Thu, 07 Jan 1993, @companies=[], @extra={}, @firstname=nil, @kids_names=#<Set: {}>, @lastname=nil, @married=false, @salary=nil>,
+ contact_details: #<User::ContactDetailsDynamicType:0x007fa28474c060 @facebook=nil, @google=nil, @twitter=nil>,
  created_at: nil,
  updated_at: nil>
 
-u.age       # => 23
+u.age       #=> 23
 u.profile.age #=> 23
 
 u.age = 30
-u.age       # => 40
+u.age       #=> 40
 u.profile.age #=> 40
 
 u.age = 25
-u.age       # => 25
+u.age       #=> 25
 u.profile.age #=> 25
 
-u.married   # => false
+u.married   #=> false
 u.married = 'T'
 u.married   #=> true
 u.salary    #=> nil
@@ -75,7 +75,7 @@ u.salary    #=> #<BigDecimal:7fa08a618ac8,'0.2028296699E6',18(27)>  #Type casted
 
 ### Default Values
 ```ruby
-u = User.new
+u = User.new(age: 26)
 u.age       # => 26
 u.married   # => true
 u.birthday  # => Sun, 07 Jan 1990
@@ -85,8 +85,8 @@ u.birthday  # => Sun, 07 Jan 1990
 ```ruby
 u.married = 'N'
 u.married   #=> false
-u.salary = '202829.6699'  # Typecasted
-u.salary    #=> #<BigDecimal:7fa08a618ac8,'0.2028296699E6',18(27)>  #Typecasted
+u.salary = '202829.6699'  # Type casted
+u.salary    #=> #<BigDecimal:7fa08a618ac8,'0.2028296699E6',18(27)>  #Type casted
 u.kids_names = ['jane', 'jane', 'solly']
 u.kids_names #=> #<Set: {"jane", "solly"}>
 u.companies = "Apple"
@@ -99,15 +99,24 @@ u.extra  #=> {:x=>3}
 
 ### Validations
 ```ruby
+u = User.new()
+=> #<User:0x007fa2853e37d8
+ id: nil,
+ email: nil,
+ profile: #<User::ProfileDynamicType:0x007fa2853daea8 @age=31, @birthday=Mon, 07 Jan 1985, @companies=[], @extra={}, @firstname=nil, @kids_names=#<Set: {}>, @lastname=nil, @married=true, @salary=nil>,
+ contact_details: #<User::ContactDetailsDynamicType:0x007fa2853b1530 @facebook=nil, @google=nil, @twitter=nil>,
+ created_at: nil,
+ updated_at: nil>
+
 u.valid?  #=> false
 u.errors
-=> #<ActiveModel::Errors:0x007fa08c002ad8
+=> #<ActiveModel::Errors:0x007fa285313038
  @base=
-  #<User:0x007fa088d5d8d0
+  #<User:0x007fa2853e37d8
    id: nil,
    email: nil,
-   profile: #<User::ProfileDynamicType:0x007fa088ced7b0 @age=20, @birthday=Tue, 01 Jan 1985, @companies=[], @extra={}, @firstname=nil, @kids_names=#<Set: {}>, @lastname=nil, @married=true, @salary=nil>,
-   contact_details: #<User::ContactDetailsDynamicType:0x007fa088cac648 @facebook=nil, @google=nil, @twitter=nil>,
+   profile: #<User::ProfileDynamicType:0x007fa2853daea8 @age=31, @birthday=Mon, 07 Jan 1985, @companies=[], @extra={}, @firstname=nil, @kids_names=#<Set: {}>, @lastname=nil, @married=true, @salary=nil>,
+   contact_details: #<User::ContactDetailsDynamicType:0x007fa2853b1530 @facebook=nil, @google=nil, @twitter=nil>,
    created_at: nil,
    updated_at: nil>,
  @messages={:firstname=>["can't be blank", "is too short (minimum is 3 characters)"], :lastname=>["can't be blank"], :salary=>["can't be blank"]}>
@@ -115,11 +124,49 @@ u.errors
 u.attributes = {firstname: 'James', lastname: 'King', salary: '1.6789'}
 u.valid?  #=> true
 u.save
-   (0.2ms)  BEGIN
-  SQL (3.3ms)  INSERT INTO "users" ("profile", "contact_details", "created_at", "updated_at") VALUES ($1, $2, $3, $4) RETURNING "id"  [["profile", "{\"firstname\":\"James\",\"lastname\":\"King\",\"age\":20,\"birthday\":\"1985-01-01\",\"salary\":\"1.6789\",\"married\":true,\"kids_names\":[\"jane\",\"solly\"],\"companies\":[\"Apple\",\"Google\"],\"extra\":{\"x\":3}}"], ["contact_details", "{\"google\":null,\"facebook\":null,\"twitter\":null}"], ["created_at", "2016-01-06 14:30:10.610800"], ["updated_at", "2016-01-06 14:30:10.610800"]]
-   (0.3ms)  COMMIT
+(2.1ms)  BEGIN
+SQL (2.7ms)  INSERT INTO "users" ("profile", "contact_details", "created_at", "updated_at") VALUES ($1, $2, $3, $4) RETURNING "id"  [["profile", "{\"firstname\":\"James\",\"lastname\":\"King\",\"age\":31,\"birthday\":\"1985-01-07\",\"salary\":\"1.6789\",\"married\":true,\"kids_names\":[],\"companies\":[],\"extra\":{}}"], ["contact_details", "{\"google\":null,\"facebook\":null,\"twitter\":null}"], ["created_at", "2016-01-07 08:58:44.945408"], ["updated_at", "2016-01-07 08:58:44.945408"]]
+(0.9ms)  COMMIT
 => true
 
+u.salary = '202829.6699'  # Type casted
+u.salary    #=> #<BigDecimal:7fa08a618ac8,'0.2028296699E6',18(27)>  #Type casted
+u.kids_names = ['jane', 'jane', 'solly']
+u.kids_names #=> #<Set: {"jane", "solly"}>
+u.companies = "Apple"
+u.companies  #=> ["Apple"]
+u.companies = ['Apple', 'Google']
+u.companies  #=> ["Apple", "Google"]
+u.extra = {x: 3}
+u.extra  #=> {:x=>3}
+
+u.facebook = "https://facebook.com/someusername"
+u.facebook #=> "https://facebook.com/someusername"
+
+u
+=> #<User:0x007fa2853e37d8
+ id: 2,
+ email: nil,
+ profile:
+  #<User::ProfileDynamicType:0x007fa2853daea8
+   @age=31,
+   @birthday=Mon, 07 Jan 1985,
+   @companies=["Apple", "Google"],
+   @extra={:x=>3},
+   @firstname="James",
+   @kids_names=#<Set: {"jane", "solly"}>,
+   @lastname="King",
+   @married=true,
+   @salary=#<BigDecimal:7fa28ba358b0,'0.2028296699E6',18(27)>>,
+ contact_details: #<User::ContactDetailsDynamicType:0x007fa2853b1530 @facebook="https://facebook.com/someusername", @google=nil, @twitter=nil>,
+ created_at: Thu, 07 Jan 2016 08:58:44 UTC +00:00,
+ updated_at: Thu, 07 Jan 2016 08:58:44 UTC +00:00>
+
+ u.save
+   (0.2ms)  BEGIN
+  SQL (0.4ms)  UPDATE "users" SET "profile" = $1, "contact_details" = $2, "updated_at" = $3 WHERE "users"."id" = $4  [["profile", "{\"firstname\":\"James\",\"lastname\":\"King\",\"age\":31,\"birthday\":\"1985-01-07\",\"salary\":\"202829.6699\",\"married\":true,\"kids_names\":[\"jane\",\"solly\"],\"companies\":[\"Apple\",\"Google\"],\"extra\":{\"x\":3}}"], ["contact_details", "{\"google\":null,\"facebook\":\"https://facebook.com/someusername\",\"twitter\":null}"], ["updated_at", "2016-01-07 09:07:10.613237"], ["id", 2]]
+   (0.2ms)  COMMIT
+=> true
 ```
 ## Installation
 
