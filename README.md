@@ -52,14 +52,6 @@ u = User.new
  contact_details: #<User::ContactDetailsDynamicType:0x007fa088cac648 @facebook=nil, @google=nil, @twitter=nil>,
  created_at: nil,
  updated_at: nil>
-
-u.age       # => 20
-u.married   # => true
-u.married = 'N'
-u.married   #=> false
-u.salary    #=> nil
-u.salary = '202829.6699'  # Typecasted
-u.salary    #=> #<BigDecimal:7fa08a618ac8,'0.2028296699E6',18(27)>  #Typecasted
 ```
 
 ### Default Values
