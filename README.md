@@ -18,19 +18,19 @@ Example:
 #  id              :integer          not null, primary key
 #  email           :string
 #  profile         :jsonb
-#  contact_details :jsonb
+#  contact_details :json
 #  created_at      :datetime         not null
 #  updated_at      :datetime         not null
 #
 
 class User < ActiveRecord::Base
   has_json_attributes_on :profile, {
-    firstname: {type: 'String', validates: {presence: true, length: {maximum: 20, minimum: 3}},
+    firstname: {type: 'String', validates: {presence: true, length: {maximum: 20, minimum: 3}}},
     lastname: {type: 'String', validates: {presence: true, length: {maximum: 20}, exclusion: {in: %w(admin ruler)}}},
-    age:  {type: 'Integer', default: 20, validates: {presence: true, numericality: true,  inclusion: { in: 18..35 }}},
-    birthday: {type: 'Date', default: -> {10.year.ago }, validates: {presence: true},
+    age:  {type: 'Integer', default: ->{rand(36)}, validates: {presence: true, numericality: true,  inclusion: { in: 18..35 }}},
+    birthday: {type: 'Date', default: ->(u){ u.age.years.ago.to_date}, validates: {presence: true}},
     salary: {type: 'Decimal', validates: {presence: true}},
-    married: {type: 'Boolean', default: -> { age > 30 ? true : false},
+    married: {type: 'Boolean', default: ->(u){ u.age > 25 ? true : false}},
     kids_names: {type: 'Set'},
     companies: {type: 'Array'},
     extra: {type: 'Hash'}
@@ -43,30 +43,42 @@ class User < ActiveRecord::Base
   }
 end
 
+
 User #=> User(id: integer, email: string, profile: jsonb, contact_details: json, created_at: datetime, updated_at: datetime)
 u = User.new
-=> #<User:0x007fa088d5d8d0
+=> #<User:0x007fa3619f0950
  id: nil,
  email: nil,
- profile: #<User::ProfileDynamicType:0x007fa088ced7b0 @age=20, @birthday=Tue, 01 Jan 1985, @companies=[], @extra={}, @firstname=nil, @kids_names=#<Set: {}>, @lastname=nil, @married=true, @salary=nil>,
- contact_details: #<User::ContactDetailsDynamicType:0x007fa088cac648 @facebook=nil, @google=nil, @twitter=nil>,
+ profile: #<User::ProfileDynamicType:0x007fa36197c168 @age=23, @birthday=Thu, 07 Jan 1993, @companies=[], @extra={}, @firstname=nil, @kids_names=#<Set: {}>, @lastname=nil, @married=false, @salary=nil>,
+ contact_details: #<User::ContactDetailsDynamicType:0x007fa361989ca0 @facebook=nil, @google=nil, @twitter=nil>,
  created_at: nil,
  updated_at: nil>
 
-u.age       # => 20
-u.married   # => true
-u.married = 'N'
-u.married   #=> false
+u.age       # => 23
+u.profile.age #=> 23
+
+u.age = 30
+u.age       # => 40
+u.profile.age #=> 40
+
+u.age = 25
+u.age       # => 25
+u.profile.age #=> 25
+
+u.married   # => false
+u.married = 'T'
+u.married   #=> true
 u.salary    #=> nil
-u.salary = '202829.6699'  # Typecasted
-u.salary    #=> #<BigDecimal:7fa08a618ac8,'0.2028296699E6',18(27)>  #Typecasted
+u.salary = '202829.6699'  # Type casted
+u.salary    #=> #<BigDecimal:7fa08a618ac8,'0.2028296699E6',18(27)>  #Type casted
 ```
 
 ### Default Values
 ```ruby
-u.age       # => 20
+u = User.new
+u.age       # => 26
 u.married   # => true
-u.birthday  # => Tue, 01 Jan 1985
+u.birthday  # => Sun, 07 Jan 1990
 ```
 
 ### Type casting
