@@ -177,8 +177,15 @@ The current version of has_json_attributes_on is compatible with Rails 4.2.x and
 Add it to your Gemfile:
 
 ```ruby
-gem "has_json_attributes_on", "~> 0.0.3", github: "wiseallie/has_json_attributes_on"
+gem "has_json_attributes_on", "~> 0.0.3"
 ```
+
+or use the bleeding edge
+
+```ruby
+gem "has_json_attributes_on", github: "wiseallie/has_json_attributes_on"
+```
+
 ### Databases
 At the moment this plugin only supports postgres, other databases may be added in later
 
