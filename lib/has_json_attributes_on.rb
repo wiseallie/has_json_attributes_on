@@ -11,7 +11,7 @@ module HasJsonAttributesOn
   }
 
   included do
-    extend Forwardable
+    # extend Forwardable
   end
 
   class_methods do
@@ -86,6 +86,7 @@ module HasJsonAttributesOn
 
     def build_json_attributes(data_column, data_column_sql_type, accessors)
 
+
       cattr_accessor :_json_attributes_on
       self._json_attributes_on ||= {}.symbolize_keys
       self._json_attributes_on[data_column] ||= {
@@ -93,10 +94,9 @@ module HasJsonAttributesOn
         types: {},
         default_values: {},
         validations: {},
-        delegators: [],
         data_column_sql_type: data_column_sql_type,
         value_type_class: VALUE_TYPE_CLASSES[data_column_sql_type.to_s],
-        value_type_instance: nil
+        serializer_klazz: nil
       }.symbolize_keys
 
       self._json_attributes_on[data_column][:accessors].merge!(accessors)
@@ -105,15 +105,44 @@ module HasJsonAttributesOn
         self._json_attributes_on[data_column][:validations][_accessor_attribute] = options[:validates] if options[:validates]
         self._json_attributes_on[data_column][:default_values][_accessor_attribute] = options[:default]
         self._json_attributes_on[data_column][:types][_accessor_attribute] = options[:type] || 'String'
-        self._json_attributes_on[data_column][:delegators] += [_accessor_attribute, "#{_accessor_attribute.to_s}=".to_sym]
       end
 
-      # set attribute for this class
-      self._json_attributes_on[data_column][:value_type_instance] = self._json_attributes_on[data_column][:value_type_class].new(self, data_column, self._json_attributes_on[data_column][:types])
-      attribute data_column, self._json_attributes_on[data_column][:value_type_instance]
+      self._json_attributes_on[data_column][:serializer_klazz]  =  self._json_attributes_on[data_column][:value_type_class].build_serializer(self, data_column, self._json_attributes_on[data_column][:types])
 
-      # set the delegators
-      def_delegators data_column, *self._json_attributes_on[data_column][:delegators]
+      store data_column,
+      accessors:  accessors.keys,
+      coder: self._json_attributes_on[data_column][:serializer_klazz]
+
+
+      define_method data_column.to_sym do
+        column_value = self[data_column.to_sym]
+        unless self._json_attributes_on[data_column][:serializer_klazz].is_my_type?(column_value)
+          column_value = self._json_attributes_on[data_column][:serializer_klazz].virtus_model.new(column_value)
+        end
+        column_value
+      end
+
+      define_method "#{data_column.to_s}=" do |value|
+        unless self._json_attributes_on[data_column][:serializer_klazz].is_my_type?(value)
+          value = self._json_attributes_on[data_column][:serializer_klazz].virtus_model.new(value)
+        end
+        raw_write_attribute(data_column, value.to_hash)
+        send("#{data_column.to_s}_will_change!")
+      end
+
+      accessors.keys.each do |_accessor_attribute|
+        define_method _accessor_attribute.to_sym do
+          column_value = send(data_column)
+          column_value.send(_accessor_attribute)
+        end
+
+        define_method "#{_accessor_attribute.to_s}=" do |value|
+          column_value = send(data_column)
+          column_value.send("#{_accessor_attribute.to_s}=", value)
+          send("#{data_column.to_s}=", column_value)
+          value
+        end
+      end
 
       # set default values
       self._json_attributes_on[data_column][:default_values].each do |_accessor_attribute, _default_value|
@@ -129,8 +158,19 @@ module HasJsonAttributesOn
       self._json_attributes_on[data_column][:validations].each do |_accessor_attribute, _attribute_validations|
         validates _accessor_attribute, _attribute_validations
       end
+
+      self.after_initialize :build_json_attributes
     end
   end
+
+  def build_json_attributes
+    # ensure that we can call the method
+    self._json_attributes_on.each_pair do |data_column, options|
+      send(data_column);
+    end
+    return true
+  end
+
 end
 
 ActiveRecord::Base.send(:include, HasJsonAttributesOn)

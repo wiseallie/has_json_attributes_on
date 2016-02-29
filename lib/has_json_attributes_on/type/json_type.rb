@@ -43,9 +43,26 @@ module HasJsonAttributesOn
 
           klazz = Class.new do
             include Virtus.model
+            cattr_accessor :type_name, :klazz_name
 
             attrs.each do |attr_name, attr_type_key|
               attribute attr_name.to_sym, AXIOMS[attr_type_key]
+            end
+
+            def  self.type_name
+              @type_name
+            end
+
+            def  self.type_name=(v)
+              @type_name = v
+            end
+
+            def  self.type_name
+              @klazz_name
+            end
+
+            def  self.type_name=(v)
+              @klazz_name = v
             end
 
             def self.inspect
@@ -57,27 +74,96 @@ module HasJsonAttributesOn
               self.inspect
             end
           end
+          klazz.klazz_name = klazz_name
+          klazz.type_name = type_name
           return model.send(:const_set, klazz_name, klazz)
         end
-      end
 
-      def initialize(model, data_column, attrs = {})
-        @virtus_model = self.class.build_virtus_model(model, data_column, attrs)
-      end
+        def build_serializer(model, data_column, attrs = {})
+          type_name = self.name
+          validate_virtus_model_attr_options!(model, attrs)
+          klazz_name = data_column.to_s.camelize + "DynamicTypeSerializer"
+          virtus_model = build_virtus_model(model, data_column, attrs)
 
-      def type_cast_from_user(value)
-        @virtus_model.new(value)
-      end
+          klazz = Class.new() do
+            cattr_accessor :klazz_name, :virtus_model, :model, :data_column, :attrs
 
-      def type_cast_from_database(value)
-        @virtus_model.new(super(value))
-      end
+            def self.is_my_type?(v)
+              v.is_a?(virtus_model)
+            end
 
-      def type_cast_for_database(value)
-        if value.is_a?(@virtus_model)
-          ::ActiveSupport::JSON.encode(value)
-        else
-          super
+            def  self.attrs
+              @attrs
+            end
+
+            def  self.attrs=(v)
+              @attrs = v
+            end
+
+            def  self.data_column
+              @data_column
+            end
+
+            def  self.data_column=(v)
+              @data_column = v
+            end
+
+            def  self.model
+              @model
+            end
+
+            def  self.model=(v)
+              @model = v
+            end
+
+            def  self.klazz_name
+              @klazz_name
+            end
+
+            def  self.klazz_name=(v)
+              @klazz_name = v
+            end
+
+            def self.virtus_model=(v)
+              @virtus_model = v
+            end
+
+            def self.virtus_model
+              @virtus_model
+            end
+
+            def self.load(value)
+              begin
+                if (value.is_a?(String))
+                  value = JSON.load(value)
+                end
+                return @virtus_model.new(value)
+              rescue Exception => e
+                Rails.logger.warn("#{name} for model #{model.name} threw an exception within self.load, #{e.class} => #{e.message}")
+                return @virtus_model.new
+              end
+            end
+
+            def self.dump(value)
+              ActiveSupport::JSON.encode(value)
+            end
+
+            def self.inspect
+              "<#{name} \n virtus_model => #{self.virtus_model.inspect} \n model => #{self.model.inspect} \n data_column => #{self.data_column} \n attrs => #{self.attrs.inspect} >"
+            end
+
+            def self.to_s
+              self.inspect
+            end
+          end
+
+          klazz.virtus_model = virtus_model
+          klazz.klazz_name = klazz_name
+          klazz.model = model
+          klazz.data_column = data_column
+          klazz.attrs = attrs
+
+          return model.send(:const_set, klazz_name, klazz)
         end
       end
     end
