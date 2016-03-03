@@ -132,15 +132,18 @@ module HasJsonAttributesOn
               @virtus_model
             end
 
+            # TODO Figure out why this is misbehaving!!!!
             def self.load(value)
               begin
                 if (value.is_a?(String))
                   value = JSON.load(value)
                 end
-                return @virtus_model.new(value)
+                # return @virtus_model.new(value)
+                return value
               rescue Exception => e
                 Rails.logger.warn("#{name} for model #{model.name} threw an exception within self.load, #{e.class} => #{e.message}")
-                return @virtus_model.new
+                # return @virtus_model.new
+                return {}
               end
             end
 
